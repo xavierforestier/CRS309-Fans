@@ -3,7 +3,7 @@ Hack to add fans to CRS309-1G-8S+
 
 ## Mikrotik CRS309-1G-8S+ and 10GB SFP+ RJ45
 Mikrotik switch is a 10gb fanless switch, using RJ45 SFP+ coppers convertor (in Mikrotik S+RJ10) causes heating issues.
-Mikrotik documented the issueand simply recomment to leave a space https://help.mikrotik.com/docs/spaces/ROS/pages/240156916/S+RJ10+general+guidance
+Mikrotik documented the issue and simply recommend to leave a space https://help.mikrotik.com/docs/spaces/ROS/pages/240156916/S+RJ10+general+guidance
 
 ### Symptoms
 Tons of logs in router OS : 
