@@ -1,4 +1,4 @@
-# CRS309-Fans
+# CRS309-1G-8S+ Fan Mods
 Hack to add fans to CRS309-1G-8S+
 
 ## Mikrotik CRS309-1G-8S+ and 10GB SFP+ RJ45
