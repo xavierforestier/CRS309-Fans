@@ -45,7 +45,7 @@ CRS-309 have enough some space for 20-15mmm thick FANs on top on SPF, the purpos
 ### DC convertor 
 ![DC-DC convertor](images/DC-DC.png)
 
-We will unsoldered the white Vin and Vout connector and replace it by wire to breadboard.
+We will unsoldered the two white Vin and Vout connectors and replace it by wires to breadboard.
 One connector will be reused / resoldered to breadboard.
 ### PCB
 ![PCB](images/PCB.png)
