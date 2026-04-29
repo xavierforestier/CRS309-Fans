@@ -27,7 +27,8 @@ CRS-309 have enough some space for 20-15mmm thick FANs on top on SPF, the purpos
      - Report fan speed via GET event
      - Handle FAN speed changes via POST event
 
-BOM : (you can find in Amazon or AliExpress too)
+## BOM
+(you can find in Amazon or AliExpress too)
 - FAN :
   - 2 x [SUN MF60151V3-1](https://www.reichelt.com/de/en/shop/product/axial_fan_60x60x15mm_12v_29_9m_h_21_3dba-260676)
   - 2 x [DELOCK 67305](https://www.reichelt.com/de/en/shop/product/fan_grill_60_x_60_mm_silver-410074)
@@ -39,3 +40,12 @@ BOM : (you can find in Amazon or AliExpress too)
 - Electronic :
   - 1 x [XIAO ESP32S3](https://www.reichelt.com/de/en/shop/product/xiao_esp32s3_dual-core_wifi_bt5_0_with_header-406872) (less powerfull would been enough)
   - 1 x L293D (reused from an arduino kit) 
+
+## Plan
+### DC convertor 
+![DC-DC convertor](images/DC-DC.png)
+
+We will unsoldered the white Vin and Vout connector and replace it by wire to breadboard.
+One connector will be reused / resoldered to breadboard.
+### PCB
+![PCB](images/PCB.png)
