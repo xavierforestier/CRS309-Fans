@@ -33,7 +33,7 @@ CRS-309 have enough some space for 20-15mmm thick FANs on top on SPF, the purpos
   - 2 x [SUN MF60151V3-1](https://www.reichelt.com/de/en/shop/product/axial_fan_60x60x15mm_12v_29_9m_h_21_3dba-260676)
   - 2 x [DELOCK 67305](https://www.reichelt.com/de/en/shop/product/fan_grill_60_x_60_mm_silver-410074)
 - PCB :
-  - 1 x : [Breadboard](https://www.reichelt.com/de/en/shop/product/breadboard_laminated_paper_200x100_mm-8273) (100x40mm would be enough)
+  - 1 x : [Perfboard](https://www.reichelt.com/de/en/shop/product/breadboard_laminated_paper_200x100_mm-8273) (100x40mm would be enough)
 - Power :
   - 1 x [12V PSU](https://www.reichelt.com/de/en/shop/product/desktop_power_supply_42_w_12_v_3_5_a-215630)
   - 1 x [DC-DC volatge regulator](https://www.reichelt.com/de/en/shop/product/developer_boards_-_voltage_regulator_dc_dc_converter_lm2596-282578)
@@ -44,8 +44,8 @@ CRS-309 have enough some space for 20-15mmm thick FANs on top on SPF, the purpos
 ## Plan
 ### DC convertor 
 ![DC-DC convertor](images/DC-DC.png)
-
-We will unsoldered the two white Vin and Vout connectors and replace it by wires to breadboard.
-One connector will be reused / resoldered to breadboard.
+DC to DC converter is a 4x4cm PCB
+We will unsoldered the two white Vin and Vout connectors and replace it by wires to main PCB.
+One connector will be reused / resoldered to gridboard for 12V Vin..
 ### PCB
 ![PCB](images/PCB.png)
