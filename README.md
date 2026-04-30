@@ -44,8 +44,11 @@ CRS-309 have enough some space for 20-15mmm thick FANs on top on SPF, the purpos
 ## Plan
 ### DC convertor 
 ![DC-DC convertor](images/DC-DC.png)
+
 DC to DC converter is a 4x4cm PCB
 We will unsoldered the two white Vin and Vout connectors and replace it by wires to main PCB.
 One connector will be reused / resoldered to gridboard for 12V Vin..
 ### PCB
 ![PCB](images/PCB.png)
+
+[tuto soudure](https://www.youtube.com/watch?v=_ypW45Y8VSs)
