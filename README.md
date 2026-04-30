@@ -52,3 +52,38 @@ One connector will be reused / resoldered to gridboard for 12V Vin..
 ![PCB](images/PCB.png)
 
 [tuto soudure](https://www.youtube.com/watch?v=_ypW45Y8VSs)
+
+## Software
+Set GPIO output
+Set PWN frequencies
+Set FANs at 100%
+Setup Wifi and connect hardcoded AP
+On Wifi connected : 
+- Start HTTPS server :
+  - on GET / : serve default html help index
+  - on GET /fans/ : [{"id":0,"speed":0,"mode":"auto"},{"id":1,"speed":100,"mode":"force"}]
+  - on GET /fans/$i :{"id":$i,"speed":[0..100],"mode":"[auto,force]"}
+  - on GET /fans/$i/id : output $i
+  - on GET /fans/$i/speed : output [0..100]
+  - on GET /fans/$i/mode : output [auto, force]
+  - on POST /fans/$i/id : HTTP "400 Bad Request"
+  - on POST /fans/$i/speed :
+    - Si body entre [0..100] : Set PWN
+    - Sinon HTTP "400 Bad Request"
+  - on POST /fans/$i/mode :
+    - si [auto, force] : set mode
+    - sinon HTTP "400 Bad Request"
+  - on GET /temp : [cpu,sfp0,sfp1,sfp2,sfp3,sfp4,sfp5,sfp6,sfp7]
+  - on GET /temp/$id : $id in [cpu,sfp0,sfp1,sfp2,sfp3,sfp4,sfp5,sfp6,sfp7] :
+    - { id: "sfp0", temp: t }
+  - on GET /temp/sfp0/id : "sfp0"
+  - on GET /temp/sfp0/temp : 85
+  - 
+- Load last well known setup
+- Search Mikrotik switch
+- Connect Mikrotik switch
+- start loop
+  - Read Mikrotik temps
+  - Compute optimum FANs speed
+  - Set Fan speed
+  - Wait 1sec
