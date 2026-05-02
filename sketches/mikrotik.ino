@@ -1,25 +1,36 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
-const int FAN0 = 1;
-const int FAN1 = 3;
+
+const int FAN0 = A1;
+const int FAN1 = A3;
 const char *ssid = "";
 const char *password = "";
 
-const int tryDelay = 500;
-int numberOfTries = 60;
-
-int wifi_status = 0;
-int prevFanSpeed0 = 255;
-int prevFanSpeed1 = 255;
 int fanSpeed0 = 255;
 int fanSpeed1 = 255;
+uint32_t PWN_Frequency = 10000;
+int PWN_Resolution = 8;
 
 WebServer server(80);
 
 void handleRoot() {
+  char rawhtml[1024];
+  const int max = (1 << PWN_Resolution)-1;
+  sprintf(rawhtml, "<html>"
+                     "<head>"
+                       "<title>Mikrotik fans</title>"
+                      "</head>"
+                      "<body onload=\"document.querySelectorAll('input').forEach(async input => { input.onchange = async event => { await fetch(`/api/${input.id}`,{method:'PUT',body:input.value})}});"
+                                     "setInterval( () => { document.querySelectorAll('input').forEach( input => { fetch(`/api/${input.id}`).then(f => {f.text().then(t => { input.value = t; });}); }); }, 30000)\">"
+                        "<label for=\"fans/0/speed\">Fan 1 speed&nbsp;:</label><input type=\"number\" id=\"fans/0/speed\" min=\"0\" max=\"%d\" /><br>"
+                        "<label for=\"fans/1/speed\">Fan 2 speed&nbsp;:</label><input type=\"number\" id=\"fans/1/speed\" min=\"0\" max=\"%d\" /><br>"
+                        "<label for=\"config/PWN_Frequency\">PWN frequency&nbsp;:</label><input type=\"number\" id=\"config/PWN_Frequency\"> Hz<br>"
+                        "<label for=\"config/PWN_Resolution\">PWN resolution&nbsp;:</label><input type=\"number\" id=\"config/PWN_Resolution\" min=\"1\" max=\"20\"> bits"
+                      "<body>"
+                    "</html>", max, max);
   digitalWrite(LED_BUILTIN, LOW);
-  server.send(200, "text/html", "<html><head><title>Mikrotik fans</title></head><body onload=\"document.querySelectorAll('input').forEach(async input => { input.onchange = async event => { await fetch(`/fans/${input.id.substr(3)}/speed`,{method:'PUT',body:input.value})}});setInterval( () => { ['0','1'].forEach( i => { fetch(`/fans/${i}/speed`).then(f => {f.text().then(t => { document.querySelector(`input#fan${i}`).value = t; });}); }); }, 30000)\"><label for=\"fan0\">Fan 1 speed&nbsp;:</label><input type=\"number\" id=\"fan0\" min=\"0\" max=\"255\" /><br><label for=\"fan1\">Fan 2 speed&nbsp;:</label><input type=\"number\" id=\"fan1\" min=\"0\" max=\"255\" /><body></html>");
+  server.send(200, "text/html", rawhtml);
   digitalWrite(LED_BUILTIN, HIGH);
 }
 void handleFavicon() { 
@@ -46,18 +57,18 @@ void handleFanNo(int id,int speed) {
   digitalWrite(LED_BUILTIN, HIGH);
 }
 void handleFanId0() {
-  handleFanIdNo(0);
+  handleGetInteger(0);
 }
 void handleFanId1() {
-  handleFanIdNo(1);
+  handleGetInteger(1);
 }
 void handleFanSpeed0() {
-  handleFanIdNo(fanSpeed0);
+  handleGetInteger(fanSpeed0);
 }
 void handleFanSpeed1() {
-  handleFanIdNo(fanSpeed1);
+  handleGetInteger(fanSpeed1);
 }
-void handleFanIdNo(int id) {
+void handleGetInteger(int id) {
   char json[3];
   digitalWrite(LED_BUILTIN, LOW);
   sprintf(json, "%d", id);
@@ -68,12 +79,43 @@ void handleFanSpeedChange0() {
   digitalWrite(LED_BUILTIN, LOW);
   fanSpeed0 = server.arg("plain").toInt();
   server.send(204);
+  analogWrite(FAN0, fanSpeed0);
   digitalWrite(LED_BUILTIN, HIGH);
 }
 void handleFanSpeedChange1() {
   digitalWrite(LED_BUILTIN, LOW);
   fanSpeed1 = server.arg("plain").toInt();
   server.send(204);
+  analogWrite(FAN1, fanSpeed1);
+  digitalWrite(LED_BUILTIN, HIGH);
+}
+void handleConfig() {
+  char json[50];
+  digitalWrite(LED_BUILTIN, LOW);
+  sprintf(json, "{\"PWN_Frequency\":%d,\"PWN_Resolution\":%d}", PWN_Frequency, PWN_Resolution);
+  server.send(200, "application/json", json);
+  digitalWrite(LED_BUILTIN, HIGH);
+}
+void handleFrequency() {
+  handleGetInteger(PWN_Frequency);
+}
+void handleFrequencyUpdate() {
+  digitalWrite(LED_BUILTIN, LOW);
+  PWN_Frequency = server.arg("plain").toInt();
+  server.send(204);
+  ledcChangeFrequency(FAN0, PWN_Frequency, PWN_Resolution);
+  ledcChangeFrequency(FAN1, PWN_Frequency, PWN_Resolution);
+  digitalWrite(LED_BUILTIN, HIGH);
+}
+void handleResolution() {
+  handleGetInteger(PWN_Resolution);
+}
+void handleResolutionUpdate() {
+  digitalWrite(LED_BUILTIN, LOW);
+  PWN_Resolution = server.arg("plain").toInt();
+  server.send(204);
+  ledcChangeFrequency(FAN0, PWN_Frequency, PWN_Resolution);
+  ledcChangeFrequency(FAN1, PWN_Frequency, PWN_Resolution);
   digitalWrite(LED_BUILTIN, HIGH);
 }
 void handleNotFound() {
@@ -95,13 +137,16 @@ void handleNotFound() {
 
 // the setup routine runs once when you press reset:
 void setup() {
-  int led = LOW;
-  digitalWrite(LED_BUILTIN, LOW);
+  int led = HIGH;
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(FAN0, OUTPUT);
   pinMode(FAN1, OUTPUT);
+  ledcAttach(FAN0, PWN_Frequency, PWN_Resolution);
+  ledcAttach(FAN1, PWN_Frequency, PWN_Resolution);
+  digitalWrite(LED_BUILTIN, LOW);  
   analogWrite(FAN0, fanSpeed0);
-  analogWrite(FAN0, fanSpeed1);
+  analogWrite(FAN1, fanSpeed1);
+
   WiFi.begin(ssid, password);
   while(WiFi.status() != WL_CONNECTED) {
     if( led == LOW ) {
@@ -117,15 +162,20 @@ void setup() {
 
   server.on("/", handleRoot);
   server.on("/favicon.ico", handleFavicon);
-  server.on("/fans", handleFans);
-  server.on("/fans/0", handleFan0);
-  server.on("/fans/1", handleFan1);
-  server.on("/fans/0/id", handleFanId0);
-  server.on("/fans/1/id", handleFanId1);
-  server.on("/fans/0/speed", HTTP_GET, handleFanSpeed0);
-  server.on("/fans/1/speed", HTTP_GET, handleFanSpeed1);
-  server.on("/fans/0/speed", HTTP_PUT, handleFanSpeedChange0);
-  server.on("/fans/1/speed", HTTP_PUT, handleFanSpeedChange1);
+  server.on("/api/fans", handleFans);
+  server.on("/api/fans/0", handleFan0);
+  server.on("/api/fans/1", handleFan1);
+  server.on("/api/fans/0/id", handleFanId0);
+  server.on("/api/fans/1/id", handleFanId1);
+  server.on("/api/fans/0/speed", HTTP_GET, handleFanSpeed0);
+  server.on("/api/fans/1/speed", HTTP_GET, handleFanSpeed1);
+  server.on("/api/fans/0/speed", HTTP_PUT, handleFanSpeedChange0);
+  server.on("/api/fans/1/speed", HTTP_PUT, handleFanSpeedChange1);
+  server.on("/api/config", handleConfig);
+  server.on("/api/config/PWN_Frequency", HTTP_GET, handleFrequency);
+  server.on("/api/config/PWN_Frequency", HTTP_PUT, handleFrequencyUpdate);
+  server.on("/api/config/PWN_Resolution", HTTP_GET, handleResolution);
+  server.on("/api/config/PWN_Resolution", HTTP_PUT, handleResolutionUpdate);
   server.onNotFound(handleNotFound);
   server.begin();
 }
@@ -133,13 +183,5 @@ void setup() {
 // the loop routine runs over and over again forever:
 void loop() {
   server.handleClient();
-  if(prevFanSpeed0 != fanSpeed0) {
-    analogWrite(FAN0, fanSpeed0);
-    prevFanSpeed0 = fanSpeed0;
-  }
-  if(prevFanSpeed1 != fanSpeed1) {
-    analogWrite(FAN0, fanSpeed1);
-    prevFanSpeed1 = fanSpeed1;
-  }
   delay(2);  //allow the cpu to switch to other tasks
 }
