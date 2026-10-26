@@ -130,7 +130,7 @@ Compute and update fans speed and returns HTTP Code 204
  
 ### Mikrotik Router OS 
 a schedule script get temperature of the warmer SFP, then compute fan speed
-$$ $speed($temp) = \frac{a}{ b } $$
+$$ $speed(temp) = \frac{a}{ ( b \cdot temp )^2 } $$
 
 ![fans speed](images/fan-speed.png)
 
