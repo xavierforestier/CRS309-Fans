@@ -135,7 +135,7 @@ a schedule script get temperature of the warmer SFP, then compute fan speed
 - $b=36$
 - $c=60$
 - $d=290$
-- $speed(temp) = \frac{a}{ ( b \times temp )^2 } + \frac{c \times temp}{ 100 } + d$
+$speed(temp) = \frac{a}{ ( b \times temp )^2 } + \frac{c \times temp}{ 100 } + d$
 
 ![fans speed](images/fan-speed.png)
 
