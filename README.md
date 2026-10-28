@@ -143,8 +143,8 @@ with
 
 
 [Live demo ](https://www.desmos.com/calculator/eqlqw0083e)
-
-Go to /system/schedule
+#### Schedule a task
+Go to /system/scheduler
 add a schedule every 2min :
 ```bash
 {
@@ -179,3 +179,7 @@ add a schedule every 2min :
     $fan 5 8 "192.168.150.46" 1;
 }
 ```
+#### Log setting
+/tool/fetch logs an entry in memory log each time it's called, so two entries each minute !), to avoid log spam you can disable it in /system/logging, by adding a "! fetch" on topics info :
+
+![Disable fetch logging](images/logging.png)
