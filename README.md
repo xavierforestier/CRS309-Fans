@@ -151,11 +151,6 @@ add a schedule every 2min :
   :local ip "192.168.150.46";
   :global overheat false;
 
-  # Usage $setFanSpeed esp32_address fan_id speed [0..255]
-  :local setFanSpeed do={
-     /tool/fetch url="http://$1/api/fans/$2/speed" http-method=put http-header-field="Content-Type:text/plain" http-data=$3 output=none;
-  };
-
   # Usage $fan first_sfp_id last_sfp_id esp32_address fan_id
   # Get max temperature of the givens SFP, then compute fan speed [0..255] 
   #                            a          c.max_temp
@@ -193,9 +188,8 @@ add a schedule every 2min :
     :local fanspeed ( ( $a / ( ( $maxtemp - $b ) * ( $maxtemp - $b ) ) ) + ( $c * $maxtemp / 100 ) + $d );
     :if ( fanspeed < 0 ) do={ :set fanspeed 0; }
     :if ( fanspeed > 255 ) do={ :set fanspeed 255; }
-    $setFanSpeed $3 $4 $fanspeed;
-    :log info ( "🌡 [ " . $detail . " ] Fan " . $4 . " " . ( $fanspeed * 100 / 255 ) . "%" );
-    :put ( "🌡 [ " . $detail . " ] Fan " . $4 . " " . ( $fanspeed * 100 / 255 ) . "%" );
+    /tool/fetch url="http://$3/api/fans/$4/speed" http-method=put http-header-field="Content-Type:text/plain" http-data=$fanspeed output=none;
+    :log info ( "🌡 [ " . $detail . " ] 𖣘 " . ( $fanspeed * 100 / 255 ) . "%" );
   };
   # sfp-1 to sfp-4 => fan #1
   $fan 1 4 $ip 1;
@@ -203,8 +197,8 @@ add a schedule every 2min :
   $fan 5 8 $ip 0;
   # In case of overheating, set all to 100%
   :if ($overheat) do={
-    $setFanSpeed $ip 0 255;
-    $setFanSpeed $ip 1 255;
+    /tool/fetch url="http://$ip/api/fans/0/speed" http-method=put http-header-field="Content-Type:text/plain" http-data=255 output=none;
+    /tool/fetch url="http://$ip/api/fans/1/speed" http-method=put http-header-field="Content-Type:text/plain" http-data=255 output=none;
     :for c from=1 to=30 step=1  do={
       for i from=700 to=3600 step=25 do={:beep length=10ms frequency=$i; :delay 10ms;}
       delay 800ms; 
