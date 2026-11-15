@@ -185,18 +185,25 @@ add a schedule every 2min :
     :for idx from=$1 to=$2 do={
       :if ($detail != "") do={ :set detail ($detail . " ⌇ "); };
       :if ( ([/interface/ethernet/monitor $idx as-value once]->"sfp-module-present") ) do={
-        :if ( ([/interface/ethernet/monitor $idx as-value once]->"sfp-temperature") ) do={
-          :local temp ([/interface/ethernet/monitor $idx as-value once]->"sfp-temperature");
-          :set detail ( $detail . $temp . "°" );
-          :if ( $maxtemp < $temp ) do={
-            :set maxtemp $temp;
+        :if ( [/interface/get ( "sfp-sfpplus" . $idx ) running] ) do={
+          :if ( ([/interface/ethernet/monitor $idx as-value once]->"sfp-temperature") ) do={
+            :local temp ([/interface/ethernet/monitor $idx as-value once]->"sfp-temperature");
+            :set detail ( $detail . $temp . "°" );
+            :if ( $maxtemp < $temp ) do={
+              :set maxtemp $temp;
+            };
+          } else={
+            :set detail ( $detail . "🔥" );
+            :set maxtemp 999;
+            :global overheat;
+            :set overheat true;
           };
         } else={
-          :set detail ( $detail . "🔥" );
-          :set maxtemp 999;
-          :global overheat;
-          :set overheat true;
-        };
+            :set detail ( $detail . "🔥" );
+            :set maxtemp 999;
+            :global overheat;
+            :set overheat true;
+          };
       } else={ 
         :set detail ( $detail . "∅" );
       };
@@ -214,9 +221,10 @@ add a schedule every 2min :
   $fan 5 8 $ip 0;
   # In case of overheating, set all to 100%
   :if ($overheat) do={
+    :log error ( "🚒 SFP overheat force fans full speed");
     /tool/fetch url="http://$ip/api/fans/0/speed" http-method=put http-header-field="Content-Type:text/plain" http-data=255 output=none;
     /tool/fetch url="http://$ip/api/fans/1/speed" http-method=put http-header-field="Content-Type:text/plain" http-data=255 output=none;
-    :for c from=1 to=30 step=1  do={
+    :for c from=1 to=5 step=1  do={
       for i from=700 to=3600 step=25 do={:beep length=10ms frequency=$i; :delay 10ms;}
       delay 800ms; 
     }
@@ -239,8 +247,5 @@ Overheating still occurs, here is an example :
 ## Limitations / TODO list
 - Take photo of finished PCB :D
 - [TUNE] Fans are a bit noisy, maybe I need to code a better PWN algorithm
-- [BUG] During overheating :
-  - SFP starts to be offline (aka report no sfp-temperature) then come back few minutes (it reports normal sfp-temperature, but there is no connection yet) : I need to detect this situation and leave the fans at 100% during these short downtime,
-  - Logged Fan speed is wrong during overheating
 - [ENHANCEMENT] Find a better fans algorithm taking into account the neighbor fan : sometimes one fans runs at 100% while next one is off, this is not optimal.
 - [ENHANCEMENT] Check if esp32 code can be move to esphome instead of arduino, implement OTA update
