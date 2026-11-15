@@ -10,22 +10,26 @@ Tons of logs in router OS :
 ```
 sfp-sfpplus1 high temperature warning! Please, improve module cooling/placement or use different type of modules for this solution
 ```
-Temperature visible in interface > Ethernet is around 80°C in idle.
-SFP+ disconnects regulary for fews minutes
+Temperature visible in interface > Ethernet it is around 80°C in idle.
+SFP+ disconnects regularly for fews minutes.
 
 ## The Hack
 CRS-309 have enough some space for 20-15mmm thick FANs on top on SPF, the purpose is :
-- Add 2 x 60mm fans in front of SFP+
+- Add two 60mm fans in front of SFP+
 - Replace original power plug with a 12V model (CRS309 allows 12v - 57v DC input)
 - Add an ESP32 and a L293D to pilot FAN speed in PWN
 - Add a 12V to 5V DC-DC adapter to power ESP32
 - Build a custom PCB
-- Code software :
+- Code esp32 software :
   - Set fans speed to 100%
   - Loop until WIFI is connected
   - Expose a HTTP REST web server :
      - Report fan speed via GET event
      - Handle FAN speed changes via POST event
+ - Code Mikrotik script :
+   - Read SFP temperature reported by ``` /interface/ethernet/monitor sfp-sfpplus<1-8> once proplist=sfp-temperature ```
+   - Compute best FAN speed
+   - Set corresponding fan speed with a HTTP request on esp32
 
 ## Hardware BOM
 (you can find in Amazon or AliExpress too)
@@ -129,7 +133,7 @@ Compute and update fans speed and returns HTTP Code 204
 Compute and update fans speed and returns HTTP Code 204
  
 ### Mikrotik Router OS 
-a schedule script get temperature of the warmer SFP, then compute fan speed
+a schedule script get temperature of the warmer SFP, then compute the corresponding fan speed.
 
 ![fans speed](images/fan-speed.png)
 $speed(temp) = \frac{a}{ ( b \times temp )^2 } + \frac{c \times temp}{ 100 } + d$
@@ -140,10 +144,23 @@ with
 - $c=60$
 - $d=290$
 
-
-
 [Live demo ](https://www.desmos.com/calculator/eqlqw0083e)
 #### Schedule a task
+Software will be done as a Mikrotik scheduled script, which will code this algorithm :
+- Set a local variable max_temp to 0°
+- Read sfp-1 to sfp-4 state :
+  - No SFP found, continue
+  - a SFP module is present, read temperature :
+    - SFP Temperature attribute is missing (S-RJ10+ overheat and is stuck in a reboot loop)
+      - Set max_temp = 999
+      - Set all FAN to 100%
+      - Ring beeper alarm
+    - SFP Temperature is higher than max_temp
+      - Set max_temp = SFP Temperature
+- Compute optimal FAN speed for max_temp
+- Set fan speed with fetch tool ``` /tool/fetch url="http://192.168.xxx.yyy/api/fans/0/speed" http-method=put http-header-field="Content-Type:text/plain" http-data=255 output=none; ```
+- Repeat for sfp-5 to sfp-8 and second fan
+  
 Go to /system/scheduler
 add a schedule every 2min :
 ```bash
@@ -210,3 +227,20 @@ add a schedule every 2min :
 /tool/fetch logs an entry in memory log each time it's called, so two entries each minute !), to avoid log spam you can disable it in /system/logging, by adding a "! fetch" on topics info :
 
 ![Disable fetch logging](images/logging.png)
+
+#### Example of logs
+Overheating still occurs, here is an example :
+![Disable fetch logging](images/overheat.png)
+- 8:00 sfp-3 was running normally at 60° and its corresponding fans at 73%
+- 8:01 disconnection occurs
+- 8:02 script detect overheating, set fans at 100%, and ring the alarm
+- 8:08 sfp-3 came up again
+
+## Limitations / TODO list
+- Take photo of finished PCB :D
+- [TUNE] Fans are a bit noisy, maybe I need to code a better PWN algorithm
+- [BUG] During overheating :
+  - SFP starts to be offline (aka report no sfp-temperature) then come back few minutes (it reports normal sfp-temperature, but there is no connection yet) : I need to detect this situation and leave the fans at 100% during these short downtime,
+  - Logged Fan speed is wrong during overheating
+- [ENHANCEMENT] Find a better fans algorithm taking into account the neighbor fan : sometimes one fans runs at 100% while next one is off, this is not optimal.
+- [ENHANCEMENT] Check if esp32 code can be move to esphome instead of arduino, implement OTA update
